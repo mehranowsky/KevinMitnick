@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ ! -s "domains.txt" ];then
+    echo "There is no company domain!"
+    exit 1
+fi
+
 while read -r domain; do
 
     TMP_FILE="db/domains/$domain/tmp_subdomains.txt"
@@ -17,15 +22,16 @@ while read -r domain; do
         #Certificate search
 
     #Check if it's first recon or not
-    if [ -f $MAIN_FILE ]; then
+    if [ -f "$MAIN_FILE" ]; then
         #Sorting results
-        cat "$TMP_FILE" | sort -u > "$NEW_FILE"
+        sort -u "$TMP_FILE" > "$NEW_FILE"
         rm "$TMP_FILE"
         #WatchTower
         ./watchTower.sh "$domain"
     else
         #Sorting results
-        cat "$TMP_FILE" | sort -u > "$MAIN_FILE"
+        sort -u "$TMP_FILE" > "$MAIN_FILE"
         rm "$TMP_FILE"
+    fi
 
 done < domains.txt
