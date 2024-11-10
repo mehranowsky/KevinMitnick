@@ -1,16 +1,17 @@
 #!/bin/bash
 
-existing_file="subdomains.txt"
-new_file="new_subdomains.txt"
-
-subfinder -d example.com -all > "$new_file"
+MAIN_FILE="subdomains.txt"
+NEW_FILE="new_subdomains.txt"
 
 # Comparing two files using process substitution
-new_assets=$(comm -23 <(sort "$new_file") <(sort "$existing_file"))
+NEW_ASSETS=$(comm -23 <(sort "$NEW_FILE") <(sort "$MAIN_FILE"))
 
 # Check if new assets found 
-if [ -n "$new_assets" ]; then 
-    echo "New assets found: $new_assets" 
+if [ -n "$NEW_ASSETS" ]; then 
+    echo "New assets found: $NEW_ASSETS"
 else 
     echo "No new assets found." 
 fi
+
+#Sorting files
+cat "$NEW_FILE" >> 
