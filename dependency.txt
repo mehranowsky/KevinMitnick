@@ -1,0 +1,3 @@
+subfinder
+sublist3r
+shuffleDNS --> massDNS
