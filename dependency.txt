@@ -1,3 +1,7 @@
 subfinder
 sublist3r
 shuffleDNS --> massDNS
+dnsx
+cut-cdn
+httpx
+bash_profile scripts

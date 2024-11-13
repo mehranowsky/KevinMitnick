@@ -10,37 +10,39 @@ DNS_WORDLIST="tools/tools_requirements/sub_brute.txt"
 
 while read -r domain; do
 
-    TMP_FILE="db/domains/$domain/tmp_subdomains.txt"
-    NEW_FILE="db/domains/$domain/new_subdomains.txt"
-    MAIN_FILE="db/domains/$domain/subdomains.txt"
+    NEW_SUBS="db/domains/$domain/new_subdomains.txt"
+    SUBS_FILE="db/domains/$domain/subdomains.txt"
     CRT_FILE="db/domains/$domain/ssl_crt.txt"
+    IPS_FILE="db/domains/$domain/ips.txt"
     #Create directory for the domain
     if [ ! -d "db/domains/$domain" ]; then
         mkdir db/domains/$domain
     fi
     #*****Finding subdomains*****
         #Subdomain enumeration  
-    subfinder -d $domain -all -silent > "$TMP_FILE"
-    sublist3r -d $domain -o sublist.txt && cat sublist.txt >> "$TMP_FILE" && rm sublist.txt
+    subfinder -d $domain -all -silent > "$NEW_SUBS.tmp"
+    sublist3r -d $domain -o sublist.txt && cat sublist.txt >> "$NEW_SUBS.tmp" && rm sublist.txt
         #DNS brute force
-    shuffledns -d $domain -r $RESOLVER -w $DNS_WORDLIST -mode bruteforce >> "$TMP_FILE"
+    shuffledns -d $domain -r $RESOLVER -w $DNS_WORDLIST -mode bruteforce >> "$NEW_SUBS.tmp"
         #Provider search
     curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].common_name" | sort -u > "$CRT_FILE.tmp"
     curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].name_value" | sort -u >> "$CRT_FILE.tmp"
-    get_cert_nuclei $domain >> "$CRT_FILE.tmp" && sort -u "$CRT_FILE.tmp" > "$CRT_FILE"
+    get_cert_nuclei $domain >> "$CRT_FILE.tmp" && sort -u "$CRT_FILE.tmp" > "$CRT_FILE" && rm "$CRT_FILE.tmp"
     
-
     #Check if it's the first recon or not
-    if [ -f "$MAIN_FILE" ]; then
-        #Sorting results to the main file
-        sort -u "$TMP_FILE" > "$NEW_FILE"
-        rm "$TMP_FILE"
-        #WatchTower
+    if [ -f "$SUBS_FILE" ]; then
         ./watchTower.sh "$domain"
     else
         #Create the first main file
-        sort -u "$TMP_FILE" > "$MAIN_FILE"
-        rm "$TMP_FILE"
+        sort -u "$NEW_SUBS.tmp" > "$SUBS_FILE"        
     fi
+    rm "$NEW_SUBS.tmp"
+
+    #*****Resolve and filter IPs*****
+    cat "$SUBS_FILE" | dnsx -silent -resp-only | cut-cdn >> "$IPS_FILE.tmp"
+    #Get ASNs
+    #get_asn $domain | sort -u
+    #mapcidr -cidr ? > "$IPS_FILE.tmp"
+
 
 done < domains.txt
