@@ -8,6 +8,7 @@ IPs=$1
 CO_NAME=$2
 OUTPUT=$3
 FILE_PATH="$OUTPUT/$CO_NAME-ips"
+
 #Check if the ip file already exists
 if [ -f "$FILE_PATH.txt" ]; then	
 	mv "$FILE_PATH.txt" "$FILE_PATH.tmp"
@@ -15,7 +16,7 @@ else
 	touch "$FILE_PATH.tmp"
 fi
 
-while read ip
+while read -r ip
 do
 	orgName=$(whois "$ip" | grep -i "OrgName" | cut -d ':' -f2)
 	if echo "$orgName" | grep -i -q "$CO_NAME"; then
