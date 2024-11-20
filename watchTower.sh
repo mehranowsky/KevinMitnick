@@ -5,9 +5,8 @@ TMP_FILE="db/domains/$DOMAIN/tmp_subdomains.txt"
 SUBS_FILE="db/domains/$DOMAIN/subdomains.txt"
 NEW_SUBS="db/domains/$DOMAIN/new_subdomains.txt"
 
-#Sorting new subdomains
-sort -u "$NEW_SUBS.tmp" > "$NEW_SUBS"
-# Comparing two files using process substitution
+#*******Watch for new subdomains*******
+    # Comparing two files
 NEW_ASSETS=$(comm -23 <(sort "$NEW_SUBS") <(sort "$SUBS_FILE"))
 
 # Check if new assets found 
@@ -22,3 +21,5 @@ else
     echo "No new assets found." 
 fi
 rm "$NEW_SUBS"
+
+#*******Watch for new IPs*******

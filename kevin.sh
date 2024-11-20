@@ -12,8 +12,8 @@ while read -r domain; do
 
     NEW_SUBS="db/domains/$domain/new_subdomains.txt"
     SUBS_FILE="db/domains/$domain/subdomains.txt"
-    CRT_FILE="db/domains/$domain/ssl_crt.txt"
     IPS_FILE="db/domains/$domain/ips.txt"
+    CO_NAME=$(echo "$domain" | sed 's/\.[^.]*$//')
     #Create directory for the domain
     if [ ! -d "db/domains/$domain" ]; then
         mkdir db/domains/$domain
@@ -23,14 +23,16 @@ while read -r domain; do
     subfinder -d $domain -all -silent > "$NEW_SUBS.tmp"
     sublist3r -d $domain -o sublist.txt && cat sublist.txt >> "$NEW_SUBS.tmp" && rm sublist.txt
         #DNS brute force
-    shuffledns -d $domain -r $RESOLVER -w $DNS_WORDLIST -mode bruteforce >> "$NEW_SUBS.tmp"
+    shuffledns -d $domain -r $RESOLVER -w $DNS_WORDLIST -t 200 -mode bruteforce >> "$NEW_SUBS.tmp"
         #Provider search
-    curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].common_name" | sort -u > "$CRT_FILE.tmp"
-    curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].name_value" | sort -u >> "$CRT_FILE.tmp"
-    get_cert_nuclei $domain >> "$CRT_FILE.tmp" && sort -u "$CRT_FILE.tmp" > "$CRT_FILE" && rm "$CRT_FILE.tmp"
-    
+    curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].common_name" | sed 's/^[*.]*//' >> "$NEW_SUBS.tmp"
+    curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].name_value" | sed 's/^[*.]*//' >> "$NEW_SUBS.tmp"
+    tools/get_cert_nuclei.sh $domain | sed 's/^[*.]*//' >> "$NEW_SUBS.tmp" 
+
     #Check if it's the first recon or not
     if [ -f "$SUBS_FILE" ]; then
+        #Sorting new subdomains
+        sort -u "$NEW_SUBS.tmp" > "$NEW_SUBS"
         ./watchTower.sh "$domain"
     else
         #Create the first main file
@@ -38,11 +40,14 @@ while read -r domain; do
     fi
     rm "$NEW_SUBS.tmp"
 
-    #*****Resolve and filter IPs*****
-    cat "$SUBS_FILE" | dnsx -silent -resp-only | cut-cdn >> "$IPS_FILE.tmp"
-    #Get ASNs
-    #get_asn $domain | sort -u
-    #mapcidr -cidr ? > "$IPS_FILE.tmp"
-
+    #*****Getting IPs*****
+        #Resolve and filter
+    cat "$SUBS_FILE" | dnsx -silent -resp-only | sort -u | cut-cdn >> "$IPS_FILE.resolved.tmp"
+    tools/mywhois.sh "$IPS_FILE.resolved.tmp" $CO_NAME | sort -u > "$IPS_FILE.tmp" && rm "$IPS_FILE.resolved.tmp"
+        #Get ASN IPs
+    tools/get_asn.sh "$IPS_FILE.tmp" | sort -u > "$IPS_FILE.asn.tmp"
+    while read -r ip; do
+        mapcidr -cidr $ip >> "$IPS_FILE.tmp"
+    done < "$IPS_FILE.asn.tmp" && rm "$IPS_FILE.asn.tmp"
 
 done < domains.txt
