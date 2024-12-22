@@ -7,19 +7,14 @@ NEW_SUBS="db/domains/$DOMAIN/new_subdomains.txt"
 
 #*******Watch for new subdomains*******
     # Comparing two files
-NEW_ASSETS=$(comm -23 <(sort "$NEW_SUBS") <(sort "$SUBS_FILE"))
+NEW_ASSETS=$(cat "$NEW_SUBS" | anew "$SUBS_FILE")
 
 # Check if new assets found 
 if [ -n "$NEW_ASSETS" ]; then 
     echo "New assets found:" 
     echo "$NEW_ASSETS"
-    echo "$NEW_ASSETS" > "$TMP_FILE"
-    sort -u "$TMP_FILE" "$SUBS_FILE" > "$SUBS_FILE.tmp"
     #./notification.sh "$NEW_ASSETS"
-    mv "$SUBS_FILE.tmp" "$SUBS_FILE" && rm "$TMP_FILE"
 else 
     echo "No new assets found." 
 fi
 rm "$NEW_SUBS"
-
-#*******Watch for new IPs*******
