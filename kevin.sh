@@ -10,57 +10,54 @@ DNS_WORDLIST="tools/tools_requirements/sub_brute.txt"
 
 while read -r domain; do
 
-    NEW_SUBS="db/domains/$domain/new_subdomains.txt"
-    SUBS_FILE="db/domains/$domain/subdomains.txt"
-    DNS_B_RESULTS="db/domains/$domain/dns_brute_results.txt"
-    IPS_FILE="db/domains/$domain/ips.txt"
+    NEW_SUBS="db/$domain/subs/new_subdomains.txt"
+    SUBS_FILE="db/$domain/subs/subdomains.txt"
+    NEW_IPS="db/$domain/ips/new_ips.txt"
+    IPS_FILE="db/$domain/ips/ips.txt"
     CO_NAME=$(echo "$domain" | sed 's/\.[^.]*$//')
-    #Create directory for the domain
-    if [ ! -d "db/domains/$domain" ]; then
-        mkdir db/domains/$domain
+    # Create directory for the domain
+    if [ ! -d "db/$domain" ]; then
+        mkdir db/$domain
+        mkdir db/$domain/subs
+        mkdir db/$domain/ips
     fi
     #*****Getting subdomains*****
-        #Subdomain enumeration  
-    subfinder -d $domain -all -silent > "$NEW_SUBS.tmp"
-    sublist3r -d $domain -o sublist.txt && cat sublist.txt >> "$NEW_SUBS.tmp" && rm sublist.txt
-        #DNS brute force
-    shuffledns -d $domain -r $RESOLVER -w $DNS_WORDLIST -mode bruteforce -o "$DNS_B_RESULTS"
-    cat "$DNS_B_RESULTS" >> "$NEW_SUBS.tmp"
+        # Subdomain enumerations  
+    subfinder -d $domain -all -silent > "$NEW_SUBS"    
+    # shuffledns -d $domain -r $RESOLVER -w $DNS_WORDLIST -t 200 -mode bruteforce -silent | anew -q "$NEW_SUBS"
         #Provider search
-    curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].common_name" | sed 's/^[*.]*//' >> "$NEW_SUBS.tmp"
-    curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].name_value" | sed 's/^[*.]*//' >> "$NEW_SUBS.tmp"
-    tools/get_cert_nuclei.sh $domain | sed 's/^[*.]*//' >> "$NEW_SUBS.tmp" 
+    curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].common_name" | sed 's/^[*.]*//' | anew -q "$NEW_SUBS"
+    curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].name_value" | sed 's/^[*.]*//' | anew -q "$NEW_SUBS"
+    tools/get_cert_nuclei.sh $domain | sed 's/^[*.]*//' | anew -q "$NEW_SUBS" 
 
-    #Check if it's the first recon or not
+    # Check if it's the first recon or not
     if [ -f "$SUBS_FILE" ]; then
-        #Sorting new subdomains
-        sort -u "$NEW_SUBS.tmp" > "$NEW_SUBS"
         ./watchSubs.sh "$domain"
     else
-        #Create the first main file
-        sort -u "$NEW_SUBS.tmp" > "$SUBS_FILE"        
+        #Create the first main subs file
+        sort -u "$NEW_SUBS" > "$SUBS_FILE"        
     fi
-    rm "$NEW_SUBS.tmp"
+    rm "$NEW_SUBS"
 
     #*****Getting IPs*****
-        #Resolve and filter
-    cat "$SUBS_FILE" | dnsx -silent -resp-only | sort -u | cut-cdn >> "$IPS_FILE.resolved.tmp"
-    tools/mywhois.sh "$IPS_FILE.resolved.tmp" $CO_NAME | sort -u > "$IPS_FILE.tmp" && rm "$IPS_FILE.resolved.tmp"
-        #Get ASN IPs
-    tools/get_asn.sh "$IPS_FILE.tmp" | sort -u > "$IPS_FILE.asn.tmp"
-        #Getting IP range from ASN
+        # Resolve and filter
+    cat "$SUBS_FILE" | dnsx -silent -resp-only | sort -u | cut-cdn > "$NEW_IPS.resolved"
+    tools/mywhois.sh "$NEW_IPS.resolved" $CO_NAME | sort -u > "$NEW_IPS" && rm "$NEW_IPS.resolved"
+        # Get ASN IPs
+    tools/get_asn.sh "$NEW_IPS" | sort -u > "$NEW_IPS.asn"
+        # Getting IP range from ASN
     while read -r ip; do
-        mapcidr -cidr $ip >> "$IPS_FILE.tmp"
-    done < "$IPS_FILE.asn.tmp" && rm "$IPS_FILE.asn.tmp"
+        mapcidr -cidr -silent $ip | anew -q "$NEW_IPS"
+    done < "$NEW_IPS.asn" && rm "$NEW_IPS.asn"
 
-        #Check if it's the first recon or not
+        # Check if it's the first recon or not
     if [ -f "$IPS_FILE" ]; then
         #Sorting new subdomains
         ./watchIPs.sh $domain
     else
-        #Create the first main file
-        sort -u "$IPS_FILE.tmp" > "$IPS_FILE"        
+        # Create the first main file
+        sort -u "$NEW_IPS" > "$IPS_FILE"        
     fi
-    rm "$IPS_FILE.tmp"
+    rm "$NEW_IPS"
 
 done < domains.txt

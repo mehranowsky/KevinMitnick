@@ -1,17 +1,16 @@
 #!/bin/bash
 
 DOMAIN=$1
-IPS_FILE="db/domains/$DOMAIN/ips.txt"
+NEW_IPS="db/$DOMAIN/ips/new_ips.txt"
+IPS_FILE="db/$DOMAIN/ips/ips.txt"
 
 #*******Watch for new IPs*******
     # Comparing two files
-NEW_IPS=$(cat "$IPS_FILE.tmp" | anew $IPS_FILE)
+NEW=$(cat "$NEW_IPS" | anew $IPS_FILE)
 
 # Check if new IPs found 
-if [ -n "$NEW_IPS" ]; then 
-    echo "New IPs found:" 
-    echo "$NEW_IPS"
-    #./notification.sh "$NEW_IPS"
+if [ -n "$NEW" ]; then 
+    ./notification.sh "$NEW"
 else 
     echo "No new assets found." 
 fi
