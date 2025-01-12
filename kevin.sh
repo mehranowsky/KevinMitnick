@@ -23,11 +23,14 @@ while read -r domain; do
     fi
     #*****Getting subdomains*****
         # Subdomain enumerations  
+    echo -e "\e[31m*************SubFinder*************\e[0m"
     subfinder -d $domain -all -silent > "$NEW_SUBS"    
     # shuffledns -d $domain -r $RESOLVER -w $DNS_WORDLIST -t 200 -mode bruteforce -silent | anew -q "$NEW_SUBS"
         #Provider search
+    echo -e "\e[31m*************CRT.SH*************\e[0m"
     curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].common_name" | sed 's/^[*.]*//' | anew -q "$NEW_SUBS"
     curl -s "https://crt.sh?q=$domain&output=json" | jq -r ".[].name_value" | sed 's/^[*.]*//' | anew -q "$NEW_SUBS"
+    echo -e "\e[31m*************Nuclei*************\e[0m"
     tools/get_cert_nuclei.sh $domain | sed 's/^[*.]*//' | anew -q "$NEW_SUBS" 
 
     # Check if it's the first recon or not
@@ -41,9 +44,11 @@ while read -r domain; do
 
     #*****Getting IPs*****
         # Resolve and filter
+    echo -e "\e[31m*************Resolve and filter CDN IPs*************\e[0m"
     cat "$SUBS_FILE" | dnsx -silent -resp-only | sort -u | cut-cdn > "$NEW_IPS.resolved"
     tools/mywhois.sh "$NEW_IPS.resolved" $CO_NAME | sort -u > "$NEW_IPS" && rm "$NEW_IPS.resolved"
         # Get ASN IPs
+    echo -e "\e[31m*************Get ASN IPs*************\e[0m"
     tools/get_asn.sh "$NEW_IPS" | sort -u > "$NEW_IPS.asn"
         # Getting IP range from ASN
     while read -r ip; do
