@@ -1,7 +1,7 @@
 #!/bin/bash
 
-$domain="$1"
-if [ ! -z "$domain" ];then
+domain="$1"
+if [ -z "$domain" ];then
     echo "There is no company domain!"
     exit 1
 fi
@@ -16,13 +16,13 @@ IPS_FILE="db/$domain/ips/ips.txt"
 CO_NAME=$(echo "$domain" | sed 's/\.[^.]*$//')
 # Create directory for the domain
 if [ ! -d "db/$domain" ]; then
-mkdir db/$domain
-mkdir db/$domain/subs
-mkdir db/$domain/ips
+mkdir db/"$domain"
+mkdir db/"$domain"/subs
+mkdir db/"$domain"/ips
 fi
 #*****Getting subdomains*****
 # Subdomain enumerations  
-echo -e "\e[31m*************SubFinder*************\e[0m"
+echo -e "\e[31m***********SubFinder***********\e[0m"
 subfinder -d $domain -all -silent > "$NEW_SUBS"    
 # shuffledns -d $domain -r $RESOLVER -w $DNS_WORDLIST -t 200 -mode bruteforce -silent | anew -q "$NEW_SUBS"
 #Provider search
@@ -43,7 +43,7 @@ rm "$NEW_SUBS"
 
 #*****Getting IPs*****
 # Resolve and filter
-echo -e "\e[31m*************Resolve and filter CDN IPs*************\e[0m"
+echo -e "\e[31m******Resolve and filter CDN IPs******\e[0m"
 cat "$SUBS_FILE" | dnsx -silent -resp-only | sort -u | cut-cdn > "$NEW_IPS.resolved"
 tools/mywhois.sh "$NEW_IPS.resolved" $CO_NAME | sort -u > "$NEW_IPS" && rm "$NEW_IPS.resolved"
 # Get ASN IPs
