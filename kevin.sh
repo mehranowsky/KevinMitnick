@@ -1,7 +1,7 @@
 #!/bin/bash
 
 $domain="$1"
-if [ ! -s "$domain" ];then
+if [ ! -z "$domain" ];then
     echo "There is no company domain!"
     exit 1
 fi
