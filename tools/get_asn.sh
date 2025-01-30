@@ -9,7 +9,7 @@ IPs=$1
 
 get_asn(){ 
   IP=$1
-  curl -s https://api.bgpview.io/ip/$IP | jq -r '.data.prefixes[] | {prefix: .prefix, ASN: .asn.asn}'
+  curl -s https://api.bgpview.io/ip/$IP | jq -r '.data.prefixes[] | .prefix'
 }
 
 while read -r line
