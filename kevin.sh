@@ -43,11 +43,11 @@ rm "$NEW_SUBS"
 
 #*****Getting IPs*****
 # Resolve and filter
-echo -e "\e[31m***Resolve and filter CDN IPs****\e[0m"
+echo -e "\e[31m***Resolve and filter CDN IPs***\e[0m"
 cat "$SUBS_FILE" | dnsx -silent -resp-only -t 50 | sort -u | cut-cdn -silent > "$NEW_IPS.resolved"
 tools/mywhois.sh "$NEW_IPS.resolved" $CO_NAME | sort -u > "$NEW_IPS" && rm "$NEW_IPS.resolved"
 # Get ASN IPs
-echo -e "\e[31m*************Get ASN IPs*************\e[0m"
+echo -e "\e[31m***********Get ASN IPs***********\e[0m"
 tools/get_asn.sh "$NEW_IPS" | sort -u > "$NEW_IPS.asn"
 # Getting IP range from ASN
 while read -r ip; do
