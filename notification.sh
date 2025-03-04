@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Set your API token and channel ID
-API_TOKEN="7419580015:AAFDDDkY62aR9K4ueRlEC1ND_5O4bA8xUGM"
-CHANNEL_ID="-1002443967270"
+# Set the API token and channel ID
+
 
 # Set the message text
 MESSAGE="$1"
